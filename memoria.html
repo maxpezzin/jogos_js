@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Memória - Dragon Ball Z</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Container principal travado em 1200x800 */
+        #game-container {
+            width: 1200px;
+            height: 800px;
+            background: radial-gradient(circle, #2a3b5c 0%, #0f172a 100%);
+            border: 5px solid #ff7300;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255, 115, 0, 0.4);
+        }
+
+        /* Cabeçalho do Jogo */
+        header {
+            height: 80px;
+            background-color: #ff7300;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            border-radius: 6px 6px 0 0;
+            border-bottom: 4px solid #cc5c00;
+        }
+
+        h1 {
+            font-size: 28px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0px #000;
+            color: #fff;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            font-size: 22px;
+            font-weight: bold;
+            text-shadow: 1px 1px 0px #000;
+        }
+
+        /* Tabuleiro do Jogo */
+        #board {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 12px;
+            perspective: 1000px; /* Necessário para o efeito 3D */
+        }
+
+        /* Cartas */
+        .card {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+        }
+
+        .card.flip .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #000;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        /* Verso da carta (O que aparece virado para baixo) */
+        .card-back {
+            background: repeating-linear-gradient(
+                45deg,
+                #ff7300,
+                #ff7300 15px,
+                #cc5c00 15px,
+                #cc5c00 30px
+            );
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .card-back::after {
+            content: 'Z';
+            font-size: 60px;
+            color: yellow;
+            -webkit-text-stroke: 2px red;
+        }
+
+        /* Frente da carta (A imagem do personagem) */
+        .card-front {
+            background-color: #fff;
+            transform: rotateY(180deg);
+        }
+
+        .card-front img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Tela de Vitória */
+        #victory-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            z-index: 10;
+        }
+
+        #victory-screen h2 {
+            font-size: 60px;
+            color: #ffcc00;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            text-shadow: 3px 3px 0px #ff0000;
+        }
+
+        #victory-screen p {
+            font-size: 28px;
+            margin: 10px 0;
+        }
+
+        button {
+            margin-top: 40px;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #ff7300;
+            color: white;
+            border: 3px solid #fff;
+            border-radius: 8px;
+            text-transform: uppercase;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #ff9900;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <header>
+            <h1>Dragon Ball Z - Memória</h1>
+            <div class="stats">
+                <div>Jogadas: <span id="moves">0</span></div>
+                <div>Tempo: <span id="time">00:00</span></div>
+            </div>
+        </header>
+
+        <div id="board">
+            </div>
+
+        <div id="victory-screen">
+            <h2>Você Venceu!</h2>
+            <p>Cartas viradas: <span id="final-moves" style="color: #ff7300;">0</span> jogadas</p>
+            <p>Tempo total: <span id="final-time" style="color: #ff7300;">00:00</span></p>
+            <button onclick="startGame()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        // -------------------------------------------------------------------------
+        // CONFIGURAÇÃO DAS CARTAS
+        // Para usar imagens reais, substitua os links do "placehold.co" 
+        // por imagens jpg/png dos personagens do seu computador ou servidor.
+        // Exemplo: 'img/goku.jpg', 'img/vegeta.png', etc.
+        // -------------------------------------------------------------------------
+        const characters = [
+            { name: 'Goku', img: 'https://placehold.co/150x150/FF7300/FFF?text=Goku' },
+            { name: 'Vegeta', img: 'https://placehold.co/150x150/0040FF/FFF?text=Vegeta' },
+            { name: 'Gohan', img: 'https://placehold.co/150x150/5C2E91/FFF?text=Gohan' },
+            { name: 'Piccolo', img: 'https://placehold.co/150x150/228B22/FFF?text=Piccolo' },
+            { name: 'Kuririn', img: 'https://placehold.co/150x150/FF8C00/FFF?text=Kuririn' },
+            { name: 'Trunks', img: 'https://placehold.co/150x150/8A2BE2/FFF?text=Trunks' },
+            { name: 'Goten', img: 'https://placehold.co/150x150/FF4500/FFF?text=Goten' },
+            { name: 'Freeza', img: 'https://placehold.co/150x150/DA70D6/FFF?text=Freeza' },
+            { name: 'Cell', img: 'https://placehold.co/150x150/32CD32/FFF?text=Cell' },
+            { name: 'Majin Buu', img: 'https://placehold.co/150x150/FFC0CB/000?text=Majin+Buu' },
+            { name: 'Raditz', img: 'https://placehold.co/150x150/000000/FFF?text=Raditz' },
+            { name: 'Nappa', img: 'https://placehold.co/150x150/A0522D/FFF?text=Nappa' },
+            { name: 'Bardock', img: 'https://placehold.co/150x150/8B0000/FFF?text=Bardock' },
+            { name: 'Broly', img: 'https://placehold.co/150x150/006400/FFF?text=Broly' },
+            { name: 'Android 18', img: 'https://placehold.co/150x150/4682B4/FFF?text=Android+18' },
+            { name: 'Android 17', img: 'https://placehold.co/150x150/2F4F4F/FFF?text=Android+17' },
+            { name: 'Tenshinhan', img: 'https://placehold.co/150x150/556B2F/FFF?text=Tenshin' },
+            { name: 'Yamcha', img: 'https://placehold.co/150x150/D2691E/FFF?text=Yamcha' },
+            { name: 'Bulma', img: 'https://placehold.co/150x150/00CED1/FFF?text=Bulma' },
+            { name: 'Chi-Chi', img: 'https://placehold.co/150x150/C71585/FFF?text=Chi-Chi' }
+        ];
+
+        const board = document.getElementById('board');
+        const movesEl = document.getElementById('moves');
+        const timeEl = document.getElementById('time');
+        const victoryScreen = document.getElementById('victory-screen');
+        const finalMovesEl = document.getElementById('final-moves');
+        const finalTimeEl = document.getElementById('final-time');
+
+        let cardsArray = [];
+        let hasFlippedCard = false;
+        let lockBoard = false;
+        let firstCard, secondCard;
+        let moves = 0;
+        let matchedPairs = 0;
+        let timeSeconds = 0;
+        let timerInterval;
+
+        // Formata o tempo para MM:SS
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // Inicia o contador de tempo
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeSeconds++;
+                timeEl.innerText = formatTime(timeSeconds);
+            }, 1000);
+        }
+
+        // Embaralha o array (Fisher-Yates)
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Inicializa/Reinicializa o Jogo
+        function startGame() {
+            // Reset de Variáveis
+            clearInterval(timerInterval);
+            timeSeconds = 0;
+            moves = 0;
+            matchedPairs = 0;
+            hasFlippedCard = false;
+            lockBoard = false;
+            firstCard = null;
+            secondCard = null;
+            
+            movesEl.innerText = moves;
+            timeEl.innerText = "00:00";
+            victoryScreen.style.display = "none";
+            board.innerHTML = "";
+
+            // Duplica os personagens para formar 20 pares (40 cartas totais)
+            cardsArray = [...characters, ...characters];
+            cardsArray = shuffle(cardsArray);
+
+            // Criação das cartas no HTML
+            cardsArray.forEach((char) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.name = char.name;
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-back"></div>
+                        <div class="card-front">
+                            <img src="${char.img}" alt="${char.name}">
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', flipCard);
+                board.appendChild(card);
+            });
+
+            startTimer();
+        }
+
+        // Lógica de virar a carta
+        function flipCard() {
+            if (lockBoard) return; // Trava cliques se 2 cartas estiverem viradas
+            if (this === firstCard) return; // Impede duplo clique na mesma carta
+
+            this.classList.add('flip');
+
+            if (!hasFlippedCard) {
+                // Primeira carta virada
+                hasFlippedCard = true;
+                firstCard = this;
+                return;
+            }
+
+            // Segunda carta virada
+            secondCard = this;
+            moves++;
+            movesEl.innerText = moves;
+            checkForMatch();
+        }
+
+        // Verifica se as cartas combinam
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.name === secondCard.dataset.name;
+
+            if (isMatch) {
+                disableCards();
+            } else {
+                unflipCards();
+            }
+        }
+
+        // Cartas combinam: remove evento de clique e checa vitória
+        function disableCards() {
+            firstCard.removeEventListener('click', flipCard);
+            secondCard.removeEventListener('click', flipCard);
+            
+            matchedPairs++;
+            
+            if (matchedPairs === 20) {
+                setTimeout(gameWon, 500);
+            }
+
+            resetBoard();
+        }
+
+        // Cartas não combinam: vira de volta com delay
+        function unflipCards() {
+            lockBoard = true;
+
+            setTimeout(() => {
+                firstCard.classList.remove('flip');
+                secondCard.classList.remove('flip');
+                resetBoard();
+            }, 1000);
+        }
+
+        // Limpa o estado da jogada atual
+        function resetBoard() {
+            [hasFlippedCard, lockBoard] = [false, false];
+            [firstCard, secondCard] = [null, null];
+        }
+
+        // Tela de Vitória
+        function gameWon() {
+            clearInterval(timerInterval);
+            finalMovesEl.innerText = moves;
+            finalTimeEl.innerText = formatTime(timeSeconds);
+            victoryScreen.style.display = "flex";
+        }
+
+        // Inicia o jogo ao carregar a página
+        window.onload = startGame;
+    </script>
+</body>
+</html>
