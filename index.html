@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogando com JS</title>
+    <style>
+        /* ESTILOS DA PÁGINA (CSS) */
+        body {
+            margin: 0;
+            padding: 0;
+            /* Imagem de fundo de um jogo/arcade */
+            background-image: url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1920&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            overflow-x: hidden;
+            cursor: none; /* Esconde o cursor padrão para usarmos o nosso */
+        }
+
+        /* Camada escura por cima da imagem para o texto aparecer melhor */
+        .overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 4em;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+            margin-top: 50px;
+        }
+
+        .btn-jogar {
+            padding: 15px 40px;
+            font-size: 24px;
+            background-color: #ff0055;
+            color: white;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            cursor: none;
+            transition: 0.3s;
+            margin-top: 30px;
+            font-weight: bold;
+        }
+
+        /* Efeito 5: Barra de Progresso no topo */
+        #barra-progresso {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 5px;
+            background: #00ffcc;
+            width: 0%;
+            z-index: 1000;
+        }
+
+        /* Efeito 2: Cursor Customizado */
+        #cursor-customizado {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00ffcc;
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s;
+        }
+
+        /* Efeito 8: Elemento Arrastável */
+        #caixa-arrastavel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 200px;
+            background: rgba(255, 0, 85, 0.8);
+            border: 2px solid white;
+            padding: 10px;
+            cursor: none;
+            user-select: none;
+            border-radius: 8px;
+            box-shadow: 0 0 15px #ff0055;
+        }
+
+        /* Modal de Boas-vindas */
+        #modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #111;
+            padding: 30px;
+            border: 2px solid #00ffcc;
+            display: none; /* Escondido no início */
+            z-index: 1001;
+            text-align: center;
+        }
+
+        #relogio {
+            font-size: 20px;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #00ffcc;
+        }
+        
+        .particula {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: cair 1s linear forwards;
+        }
+
+        @keyframes cair {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(50px) scale(0); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="barra-progresso"></div>
+
+    <div id="cursor-customizado"></div>
+
+    <div id="caixa-arrastavel">
+        🎮 <b>Arraste-me!</b><br>
+        Dica: Digite "A B C" no teclado para um segredo.
+    </div>
+
+    <div class="overlay">
+        <h1 id="titulo"></h1>
+
+        <p>Bem-vindo à plataforma mais interativa da web!</p>
+        
+        <button class="btn-jogar" id="btn-jogar" onmouseover="efeitoGlitch()" onmouseout="pararGlitch()">COMEÇAR AVENTURA</button>
+
+        <div style="height: 1000px;"></div> </div>
+
+    <div id="relogio">00:00:00</div>
+
+    <div id="modal">
+        <h2>Pronto para jogar? 🚀</h2>
+        <p>Prepare-se para explorar os melhores jogos em JS!</p>
+        <button onclick="fecharModal()" style="padding: 10px; cursor: pointer;">Fechar</button>
+    </div>
+
+    <script>
+        // --- EFEITO 1: Máquina de Escrever ---
+        const textoTitulo = "Jogando com JS";
+        let i = 0;
+        function digitarTexto() {
+            if (i < textoTitulo.length) {
+                document.getElementById("titulo").innerHTML += textoTitulo.charAt(i);
+                i++;
+                setTimeout(digitarTexto, 150); // Velocidade da digitação
+            }
+        }
+        window.onload = digitarTexto;
+
+        // --- EFEITO 2: Cursor Customizado ---
+        const cursor = document.getElementById('cursor-customizado');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.pageX + 'px';
+            cursor.style.top = e.pageY + 'px';
+        });
+        document.addEventListener('mousedown', () => cursor.style.transform = 'translate(-50%, -50%) scale(0.5)');
+        document.addEventListener('mouseup', () => cursor.style.transform = 'translate(-50%, -50%) scale(1)');
+
+        // --- EFEITO 3: Relógio Digital em Tempo Real ---
+        function atualizarRelogio() {
+            const agora = new Date();
+            document.getElementById('relogio').innerText = agora.toLocaleTimeString('pt-BR');
+        }
+        setInterval(atualizarRelogio, 1000);
+
+        // --- EFEITO 4: Partículas ao Clicar na Tela ---
+        document.addEventListener('click', function(e) {
+            for(let j = 0; j < 5; j++) {
+                let particula = document.createElement('div');
+                particula.className = 'particula';
+                particula.style.left = (e.pageX + (Math.random() * 40 - 20)) + 'px';
+                particula.style.top = (e.pageY + (Math.random() * 40 - 20)) + 'px';
+                particula.style.width = particula.style.height = (Math.random() * 10 + 5) + 'px';
+                particula.style.backgroundColor = ['#00ffcc', '#ff0055', '#fff'][Math.floor(Math.random() * 3)];
+                document.body.appendChild(particula);
+                setTimeout(() => particula.remove(), 1000); // Remove depois de 1 segundo
+            }
+        });
+
+        // --- EFEITO 5: Barra de Progresso de Rolagem (Scroll) ---
+        window.addEventListener('scroll', () => {
+            let alturaPagina = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            let rolagem = window.scrollY;
+            let progresso = (rolagem / alturaPagina) * 100;
+            document.getElementById('barra-progresso').style.width = progresso + "%";
+        });
+
+        // --- EFEITO 6: Efeito Glitch/Tremor no Botão (Hover) ---
+        let glitchInterval;
+        const btn = document.getElementById('btn-jogar');
+        function efeitoGlitch() {
+            glitchInterval = setInterval(() => {
+                btn.style.transform = `translate(${Math.random() * 4 - 2}px, ${Math.random() * 4 - 2}px)`;
+            }, 50);
+        }
+        function pararGlitch() {
+            clearInterval(glitchInterval);
+            btn.style.transform = 'translate(0, 0)';
+        }
+
+        // --- EFEITO 7: Easter Egg (Código Secreto no Teclado) ---
+        let sequencia = "";
+        const codigoSecreto = "abc";
+        document.addEventListener('keydown', (e) => {
+            sequencia += e.key.toLowerCase();
+            if (sequencia.includes(codigoSecreto)) {
+                alert("🎮 CÓDIGO SECRETO ATIVADO! Você ganhou vidas infinitas! 🎮");
+                sequencia = ""; // Reseta a sequência
+            }
+            // Limita o tamanho da string para não gastar memória
+            if (sequencia.length > 10) sequencia = sequencia.slice(-10);
+        });
+
+        // --- EFEITO 8: Elemento Arrastável ---
+        const caixa = document.getElementById('caixa-arrastavel');
+        let arrastando = false, offsetX, offsetY;
+        caixa.addEventListener('mousedown', (e) => {
+            arrastando = true;
+            offsetX = e.clientX - caixa.getBoundingClientRect().left;
+            offsetY = e.clientY - caixa.getBoundingClientRect().top;
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (arrastando) {
+                caixa.style.left = (e.clientX - offsetX) + 'px';
+                caixa.style.top = (e.clientY - offsetY) + 'px';
+            }
+        });
+        document.addEventListener('mouseup', () => arrastando = false);
+
+        // --- EFEITO 9: Mudar a cor do botão ao clicar ---
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Impede que o clique crie partículas em cima do botão
+            const cores = ['#ff0055', '#00ffcc', '#ffcc00', '#cc00ff'];
+            const corAleatoria = cores[Math.floor(Math.random() * cores.length)];
+            btn.style.backgroundColor = corAleatoria;
+        });
+
+        // --- EFEITO 10: Modal Automático de Boas-vindas (Aparece após 2 segundos) ---
+        setTimeout(() => {
+            document.getElementById('modal').style.display = 'block';
+        }, 2000);
+
+        function fecharModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
