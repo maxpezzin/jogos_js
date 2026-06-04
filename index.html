@@ -6,265 +6,286 @@
     <title>Jogando com JS</title>
     <style>
         /* ESTILOS DA PÁGINA (CSS) */
-        body {
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            /* Imagem de fundo de um jogo/arcade */
-            background-image: url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1920&auto=format&fit=crop');
+        }
+
+        body {
+            /* Imagem de fundo temática de jogos Arcade/Pac-Man */
+            background-image: url('https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?q=80&w=1920&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #fff;
+            min-height: 100vh;
             overflow-x: hidden;
-            cursor: none; /* Esconde o cursor padrão para usarmos o nosso */
+            cursor: none; /* Esconde o cursor padrão para o Efeito 3 */
         }
 
-        /* Camada escura por cima da imagem para o texto aparecer melhor */
+        /* Fundo escurecido para dar destaque aos cards */
         .overlay {
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(10, 10, 15, 0.85);
             min-height: 100vh;
-            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding: 40px 20px;
+        }
+
+        /* Estilo do Título e Saudação */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
         }
 
         h1 {
             font-size: 4em;
-            color: #00ffcc;
-            text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
-            margin-top: 50px;
+            color: #00ffea;
+            text-shadow: 0 0 15px #00ffea, 0 0 30px #00a3ff;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            min-height: 75px; /* Evita pulo na tela durante a digitação */
+        }
+
+        #saudacao {
+            font-size: 1.5em;
+            color: #ff007b;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff007b;
+        }
+
+        /* Container dos Cards dos Jogos */
+        .grid-jogos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            max-width: 1200px;
+        }
+
+        /* Estilo individual de cada Card */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px); /* Efeito de vidro */
+            border-radius: 15px;
+            width: 300px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: box-shadow 0.3s, border-color 0.3s;
+            /* Preparação para o Efeito 4 (3D Tilt) */
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .card:hover {
+            border-color: #00ffea;
+            box-shadow: 0 0 20px rgba(0, 255, 234, 0.4);
+        }
+
+        .card h2 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: #fff;
+            transform: translateZ(30px); /* Traz o texto para frente no efeito 3D */
+        }
+
+        .card p {
+            font-size: 1em;
+            color: #ccc;
+            margin-bottom: 25px;
+            transform: translateZ(20px);
         }
 
         .btn-jogar {
-            padding: 15px 40px;
-            font-size: 24px;
-            background-color: #ff0055;
+            background: linear-gradient(45deg, #ff007b, #6b00ff);
             color: white;
-            border: 2px solid #fff;
-            border-radius: 10px;
-            cursor: none;
-            transition: 0.3s;
-            margin-top: 30px;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
             font-weight: bold;
+            border-radius: 25px;
+            cursor: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            transform: translateZ(40px); /* Traz o botão para frente */
         }
 
-        /* Efeito 5: Barra de Progresso no topo */
-        #barra-progresso {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 5px;
-            background: #00ffcc;
-            width: 0%;
-            z-index: 1000;
+        .btn-jogar:hover {
+            transform: translateZ(40px) scale(1.1);
+            box-shadow: 0 0 15px #ff007b;
         }
 
-        /* Efeito 2: Cursor Customizado */
-        #cursor-customizado {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #00ffcc;
+        /* Efeito 3: Cursor Customizado */
+        #cursor-gamer {
+            width: 24px;
+            height: 24px;
+            background-color: transparent;
+            border: 3px solid #00ffea;
             border-radius: 50%;
             position: fixed;
-            pointer-events: none;
+            pointer-events: none; /* Para não atrapalhar os cliques */
             z-index: 9999;
             transform: translate(-50%, -50%);
-            transition: transform 0.1s;
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
         }
 
-        /* Efeito 8: Elemento Arrastável */
-        #caixa-arrastavel {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 200px;
-            background: rgba(255, 0, 85, 0.8);
-            border: 2px solid white;
-            padding: 10px;
-            cursor: none;
-            user-select: none;
-            border-radius: 8px;
-            box-shadow: 0 0 15px #ff0055;
-        }
-
-        /* Modal de Boas-vindas */
-        #modal {
+        /* Efeito 5: Partículas do Clique */
+        .explosao {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #111;
-            padding: 30px;
-            border: 2px solid #00ffcc;
-            display: none; /* Escondido no início */
-            z-index: 1001;
-            text-align: center;
-        }
-
-        #relogio {
-            font-size: 20px;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.5);
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #00ffcc;
-        }
-        
-        .particula {
-            position: absolute;
-            background: #fff;
+            width: 10px;
+            height: 10px;
+            background: #ff007b;
             border-radius: 50%;
             pointer-events: none;
-            animation: cair 1s linear forwards;
+            animation: explodir 0.6s ease-out forwards;
+            z-index: 9998;
         }
 
-        @keyframes cair {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(50px) scale(0); opacity: 0; }
+        @keyframes explodir {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(5); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div id="barra-progresso"></div>
-
-    <div id="cursor-customizado"></div>
-
-    <div id="caixa-arrastavel">
-        🎮 <b>Arraste-me!</b><br>
-        Dica: Digite "A B C" no teclado para um segredo.
-    </div>
+    <div id="cursor-gamer"></div>
 
     <div class="overlay">
-        <h1 id="titulo"></h1>
+        <header>
+            <h1 id="titulo-animado"></h1>
+            <p id="saudacao"></p>
+        </header>
 
-        <p>Bem-vindo à plataforma mais interativa da web!</p>
-        
-        <button class="btn-jogar" id="btn-jogar" onmouseover="efeitoGlitch()" onmouseout="pararGlitch()">COMEÇAR AVENTURA</button>
+        <main class="grid-jogos">
+            
+            <div class="card tilt-card">
+                <h2>Jogo da Velha</h2>
+                <p>O clássico atemporal. Jogue contra um amigo ou contra a máquina.</p>
+                <button class="btn-jogar">Acessar Jogo</button>
+            </div>
 
-        <div style="height: 1000px;"></div> </div>
+            <div class="card tilt-card">
+                <h2>Cobrinha (Snake)</h2>
+                <p>Coma os pontos brilhantes, cresça e não bata nas paredes!</p>
+                <button class="btn-jogar">Acessar Jogo</button>
+            </div>
 
-    <div id="relogio">00:00:00</div>
+            <div class="card tilt-card">
+                <h2>Jogo da Memória</h2>
+                <p>Teste sua mente encontrando os pares das cartas viradas.</p>
+                <button class="btn-jogar">Acessar Jogo</button>
+            </div>
 
-    <div id="modal">
-        <h2>Pronto para jogar? 🚀</h2>
-        <p>Prepare-se para explorar os melhores jogos em JS!</p>
-        <button onclick="fecharModal()" style="padding: 10px; cursor: pointer;">Fechar</button>
+            <div class="card tilt-card">
+                <h2>Space Invaders</h2>
+                <p>Defenda a Terra da invasão alienígena com sua nave espacial.</p>
+                <button class="btn-jogar">Acessar Jogo</button>
+            </div>
+
+        </main>
     </div>
 
     <script>
-        // --- EFEITO 1: Máquina de Escrever ---
+        // --- EFEITO 1: Máquina de Escrever no Título Principal ---
         const textoTitulo = "Jogando com JS";
+        const elementoTitulo = document.getElementById("titulo-animado");
         let i = 0;
-        function digitarTexto() {
+        
+        function escreverTitulo() {
             if (i < textoTitulo.length) {
-                document.getElementById("titulo").innerHTML += textoTitulo.charAt(i);
+                elementoTitulo.innerHTML += textoTitulo.charAt(i);
                 i++;
-                setTimeout(digitarTexto, 150); // Velocidade da digitação
+                setTimeout(escreverTitulo, 120); // Velocidade de cada letra (em milissegundos)
             }
         }
-        window.onload = digitarTexto;
+        window.onload = escreverTitulo; // Inicia quando a página carrega
 
-        // --- EFEITO 2: Cursor Customizado ---
-        const cursor = document.getElementById('cursor-customizado');
+        // --- EFEITO 2: Saudação Inteligente (Muda dependendo da hora do dia) ---
+        const elementoSaudacao = document.getElementById("saudacao");
+        const horaAtual = new Date().getHours();
+        
+        if (horaAtual >= 5 && horaAtual < 12) {
+            elementoSaudacao.innerText = "Bom dia, Jogador! Pronto para a primeira partida?";
+        } else if (horaAtual >= 12 && horaAtual < 18) {
+            elementoSaudacao.innerText = "Boa tarde, Jogador! Escolha sua aventura.";
+        } else {
+            elementoSaudacao.innerText = "Boa noite, Jogador! A madrugada promete.";
+        }
+
+        // --- EFEITO 3: Cursor Gamer Neon que reage aos cliques ---
+        const cursor = document.getElementById('cursor-gamer');
+        
+        // Faz o cursor seguir o mouse
         document.addEventListener('mousemove', (e) => {
-            cursor.style.left = e.pageX + 'px';
-            cursor.style.top = e.pageY + 'px';
-        });
-        document.addEventListener('mousedown', () => cursor.style.transform = 'translate(-50%, -50%) scale(0.5)');
-        document.addEventListener('mouseup', () => cursor.style.transform = 'translate(-50%, -50%) scale(1)');
-
-        // --- EFEITO 3: Relógio Digital em Tempo Real ---
-        function atualizarRelogio() {
-            const agora = new Date();
-            document.getElementById('relogio').innerText = agora.toLocaleTimeString('pt-BR');
-        }
-        setInterval(atualizarRelogio, 1000);
-
-        // --- EFEITO 4: Partículas ao Clicar na Tela ---
-        document.addEventListener('click', function(e) {
-            for(let j = 0; j < 5; j++) {
-                let particula = document.createElement('div');
-                particula.className = 'particula';
-                particula.style.left = (e.pageX + (Math.random() * 40 - 20)) + 'px';
-                particula.style.top = (e.pageY + (Math.random() * 40 - 20)) + 'px';
-                particula.style.width = particula.style.height = (Math.random() * 10 + 5) + 'px';
-                particula.style.backgroundColor = ['#00ffcc', '#ff0055', '#fff'][Math.floor(Math.random() * 3)];
-                document.body.appendChild(particula);
-                setTimeout(() => particula.remove(), 1000); // Remove depois de 1 segundo
-            }
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
         });
 
-        // --- EFEITO 5: Barra de Progresso de Rolagem (Scroll) ---
-        window.addEventListener('scroll', () => {
-            let alturaPagina = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-            let rolagem = window.scrollY;
-            let progresso = (rolagem / alturaPagina) * 100;
-            document.getElementById('barra-progresso').style.width = progresso + "%";
+        // Efeito de "apertar" quando clica
+        document.addEventListener('mousedown', () => {
+            cursor.style.width = '15px';
+            cursor.style.height = '15px';
+            cursor.style.backgroundColor = '#00ffea';
+        });
+        document.addEventListener('mouseup', () => {
+            cursor.style.width = '24px';
+            cursor.style.height = '24px';
+            cursor.style.backgroundColor = 'transparent';
         });
 
-        // --- EFEITO 6: Efeito Glitch/Tremor no Botão (Hover) ---
-        let glitchInterval;
-        const btn = document.getElementById('btn-jogar');
-        function efeitoGlitch() {
-            glitchInterval = setInterval(() => {
-                btn.style.transform = `translate(${Math.random() * 4 - 2}px, ${Math.random() * 4 - 2}px)`;
-            }, 50);
-        }
-        function pararGlitch() {
-            clearInterval(glitchInterval);
-            btn.style.transform = 'translate(0, 0)';
-        }
+        // --- EFEITO 4: Cards 3D (Tilt Effect) que acompanham o mouse ---
+        const cards = document.querySelectorAll('.tilt-card');
+        
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left; // Posição X dentro do card
+                const y = e.clientY - rect.top;  // Posição Y dentro do card
+                
+                // Calcula a rotação com base na posição do mouse
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -15; // Máximo de 15 graus
+                const rotateY = ((x - centerX) / centerX) * 15;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            });
 
-        // --- EFEITO 7: Easter Egg (Código Secreto no Teclado) ---
-        let sequencia = "";
-        const codigoSecreto = "abc";
-        document.addEventListener('keydown', (e) => {
-            sequencia += e.key.toLowerCase();
-            if (sequencia.includes(codigoSecreto)) {
-                alert("🎮 CÓDIGO SECRETO ATIVADO! Você ganhou vidas infinitas! 🎮");
-                sequencia = ""; // Reseta a sequência
-            }
-            // Limita o tamanho da string para não gastar memória
-            if (sequencia.length > 10) sequencia = sequencia.slice(-10);
+            // Retorna ao normal quando o mouse sai de cima do card
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                card.style.transition = 'transform 0.5s ease'; // Suaviza a volta
+            });
+            
+            // Remove a transição suave durante o movimento para não dar lag
+            card.addEventListener('mouseenter', () => {
+                card.style.transition = 'none';
+            });
         });
 
-        // --- EFEITO 8: Elemento Arrastável ---
-        const caixa = document.getElementById('caixa-arrastavel');
-        let arrastando = false, offsetX, offsetY;
-        caixa.addEventListener('mousedown', (e) => {
-            arrastando = true;
-            offsetX = e.clientX - caixa.getBoundingClientRect().left;
-            offsetY = e.clientY - caixa.getBoundingClientRect().top;
-        });
-        document.addEventListener('mousemove', (e) => {
-            if (arrastando) {
-                caixa.style.left = (e.clientX - offsetX) + 'px';
-                caixa.style.top = (e.clientY - offsetY) + 'px';
-            }
-        });
-        document.addEventListener('mouseup', () => arrastando = false);
-
-        // --- EFEITO 9: Mudar a cor do botão ao clicar ---
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Impede que o clique crie partículas em cima do botão
-            const cores = ['#ff0055', '#00ffcc', '#ffcc00', '#cc00ff'];
-            const corAleatoria = cores[Math.floor(Math.random() * cores.length)];
-            btn.style.backgroundColor = corAleatoria;
+        // --- EFEITO 5: Explosão de Partícula ao Clicar na Tela ---
+        document.addEventListener('click', (e) => {
+            const explosao = document.createElement('div');
+            explosao.classList.add('explosao');
+            explosao.style.left = e.clientX + 'px';
+            explosao.style.top = e.clientY + 'px';
+            
+            // Adiciona cor aleatória à explosão (Rosa, Ciano ou Roxo)
+            const cores = ['#ff007b', '#00ffea', '#6b00ff'];
+            explosao.style.background = cores[Math.floor(Math.random() * cores.length)];
+            
+            document.body.appendChild(explosao);
+            
+            // Remove o elemento do HTML depois que a animação termina (600ms)
+            setTimeout(() => {
+                explosao.remove();
+            }, 600);
         });
 
-        // --- EFEITO 10: Modal Automático de Boas-vindas (Aparece após 2 segundos) ---
-        setTimeout(() => {
-            document.getElementById('modal').style.display = 'block';
-        }, 2000);
-
-        function fecharModal() {
-            document.getElementById('modal').style.display = 'none';
-        }
     </script>
 </body>
 </html>
