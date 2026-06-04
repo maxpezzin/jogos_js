@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Cobrinha</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-wrapper {
+            position: relative;
+            width: 1200px;
+        }
+
+        #scoreboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #333;
+            padding: 15px 25px;
+            border-radius: 8px 8px 0 0;
+            font-size: 22px;
+            font-weight: bold;
+            border: 4px solid #444;
+            border-bottom: none;
+        }
+
+        .stat-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .highlight {
+            color: #4CAF50;
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 1200px;
+            height: 800px;
+        }
+
+        canvas {
+            background-color: #000;
+            border: 4px solid #444;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            display: block;
+        }
+
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0 0 8px 8px;
+            z-index: 10;
+        }
+
+        #game-over-screen h1 {
+            font-size: 70px;
+            color: #ff5252;
+            margin: 0 0 20px 0;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        #game-over-screen p {
+            font-size: 24px;
+            margin: 5px 0;
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-wrapper">
+        <div id="scoreboard">
+            <div class="stat-box">Pontos: <span id="score" class="highlight">0</span></div>
+            <div class="stat-box">Recorde: <span id="high-score" class="highlight">0</span></div>
+            <div class="stat-box">Vidas: <span id="lives" style="color: #ff5252;">3</span></div>
+            <div class="stat-box">Tempo: <span id="time" style="color: #64b5f6;">00:00</span></div>
+        </div>
+        
+        <div id="canvas-container">
+            <canvas id="gameCanvas" width="1200" height="800"></canvas>
+            
+            <div id="game-over-screen">
+                <h1>Fim de Jogo</h1>
+                <p>Pontuação Final: <span id="final-score" class="highlight">0</span></p>
+                <p>Tempo de Sobrevivência: <span id="final-time" style="color: #64b5f6;">00:00</span></p>
+                <button onclick="fullReset()">Jogar Novamente</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Elementos do HTML
+        const scoreEl = document.getElementById("score");
+        const highScoreEl = document.getElementById("high-score");
+        const livesEl = document.getElementById("lives");
+        const timeEl = document.getElementById("time");
+        const gameOverScreen = document.getElementById("game-over-screen");
+        const finalScoreEl = document.getElementById("final-score");
+        const finalTimeEl = document.getElementById("final-time");
+
+        // Configurações do Jogo
+        const gridSize = 40; // Tamanho de cada "bloco" da grade (1200x800 / 40 = 30x20 blocos)
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const gameSpeed = 100; // Velocidade da cobra (ms por frame)
+
+        // Variáveis de Estado
+        let snake = [];
+        let food = {};
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+        let lives = 3;
+        let timeSeconds = 0;
+        let highScore = localStorage.getItem("snakeHighScore") || 0;
+        
+        // Controladores de Loop e Tempo
+        let gameInterval;
+        let timeInterval;
+        let isGameOver = false;
+
+        highScoreEl.innerText = highScore;
+
+        // Controle de Teclado (impede que a cobra dê "ré" em si mesma)
+        document.addEventListener("keydown", changeDirection);
+
+        function changeDirection(event) {
+            const LEFT_KEY = 37;
+            const RIGHT_KEY = 39;
+            const UP_KEY = 38;
+            const DOWN_KEY = 40;
+
+            const keyPressed = event.keyCode;
+            const goingUp = dy === -gridSize;
+            const goingDown = dy === gridSize;
+            const goingRight = dx === gridSize;
+            const goingLeft = dx === -gridSize;
+
+            if (keyPressed === LEFT_KEY && !goingRight) {
+                dx = -gridSize;
+                dy = 0;
+            }
+            if (keyPressed === UP_KEY && !goingDown) {
+                dx = 0;
+                dy = -gridSize;
+            }
+            if (keyPressed === RIGHT_KEY && !goingLeft) {
+                dx = gridSize;
+                dy = 0;
+            }
+            if (keyPressed === DOWN_KEY && !goingUp) {
+                dx = 0;
+                dy = gridSize;
+            }
+        }
+
+        function spawnFood() {
+            food.x = Math.floor(Math.random() * (canvasWidth / gridSize)) * gridSize;
+            food.y = Math.floor(Math.random() * (canvasHeight / gridSize)) * gridSize;
+            
+            // Garante que a comida não apareça em cima da cobra
+            snake.forEach(function has_snake_eaten_food(part) {
+                const has_eaten = part.x == food.x && part.y == food.y;
+                if (has_eaten) spawnFood();
+            });
+        }
+
+        function formatTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateTime() {
+            timeSeconds++;
+            timeEl.innerText = formatTime(timeSeconds);
+        }
+
+        // Função que reseta a cobra após perder uma vida
+        function softReset() {
+            snake = [
+                {x: 600, y: 400},
+                {x: 560, y: 400},
+                {x: 520, y: 400}
+            ];
+            dx = gridSize; // Começa movendo para a direita
+            dy = 0;
+            spawnFood();
+        }
+
+        // Função que reseta todo o jogo (Fim de Jogo)
+        function fullReset() {
+            gameOverScreen.style.display = "none";
+            score = 0;
+            lives = 3;
+            timeSeconds = 0;
+            isGameOver = false;
+            
+            scoreEl.innerText = score;
+            livesEl.innerText = lives;
+            timeEl.innerText = "00:00";
+            
+            softReset();
+            
+            clearInterval(gameInterval);
+            clearInterval(timeInterval);
+            
+            gameInterval = setInterval(main, gameSpeed);
+            timeInterval = setInterval(updateTime, 1000);
+        }
+
+        function checkCollision() {
+            const head = snake[0];
+            
+            // Colisão com as paredes
+            const hitLeftWall = head.x < 0;
+            const hitRightWall = head.x >= canvasWidth;
+            const hitToptWall = head.y < 0;
+            const hitBottomWall = head.y >= canvasHeight;
+
+            // Colisão com o próprio corpo
+            let hitSelf = false;
+            for (let i = 4; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    hitSelf = true;
+                    break;
+                }
+            }
+
+            if (hitLeftWall || hitRightWall || hitToptWall || hitBottomWall || hitSelf) {
+                handleDeath();
+            }
+        }
+
+        function handleDeath() {
+            lives--;
+            livesEl.innerText = lives;
+
+            if (lives > 0) {
+                softReset(); // Perdeu uma vida, mas continua
+            } else {
+                // Game Over
+                isGameOver = true;
+                clearInterval(gameInterval);
+                clearInterval(timeInterval);
+                
+                // Atualiza Recorde
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem("snakeHighScore", highScore);
+                    highScoreEl.innerText = highScore;
+                }
+
+                finalScoreEl.innerText = score;
+                finalTimeEl.innerText = formatTime(timeSeconds);
+                gameOverScreen.style.display = "flex";
+            }
+        }
+
+        function drawSnake() {
+            snake.forEach((part, index) => {
+                // A cabeça tem uma cor um pouco diferente do corpo
+                ctx.fillStyle = index === 0 ? "#81C784" : "#4CAF50";
+                ctx.strokeStyle = "#1a1a1a";
+                ctx.fillRect(part.x, part.y, gridSize, gridSize);
+                ctx.strokeRect(part.x, part.y, gridSize, gridSize);
+            });
+        }
+
+        function drawFood() {
+            ctx.fillStyle = "#ff5252";
+            ctx.strokeStyle = "#b71c1c";
+            ctx.fillRect(food.x, food.y, gridSize, gridSize);
+            ctx.strokeRect(food.x, food.y, gridSize, gridSize);
+        }
+
+        function moveSnake() {
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            snake.unshift(head); // Adiciona nova cabeça
+
+            // Se comeu a comida
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreEl.innerText = score;
+                spawnFood();
+            } else {
+                snake.pop(); // Remove a cauda (mantém o tamanho se não comeu)
+            }
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+
+        // Loop Principal do Jogo
+        function main() {
+            if (isGameOver) return;
+            
+            clearCanvas();
+            drawFood();
+            moveSnake();
+            drawSnake();
+            checkCollision();
+        }
+
+        // Iniciar o jogo pela primeira vez
+        fullReset();
+
+    </script>
+</body>
+</html>
